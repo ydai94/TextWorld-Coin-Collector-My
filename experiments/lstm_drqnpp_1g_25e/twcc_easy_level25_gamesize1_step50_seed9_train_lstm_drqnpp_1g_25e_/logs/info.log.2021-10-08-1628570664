@@ -1,0 +1,6 @@
+2021-08-10 04:44:24,905 - [setup_logger.py:63-log_git_commit()] - INFO - current git commit: b'184d54b14ea4466588c8ea74d3e2b998e9801c9d\n'
+2021-08-10 04:50:52,135 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-08-10 04:59:01,230 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-08-10 05:05:39,403 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-08-10 05:12:24,115 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-08-10 05:19:08,994 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
