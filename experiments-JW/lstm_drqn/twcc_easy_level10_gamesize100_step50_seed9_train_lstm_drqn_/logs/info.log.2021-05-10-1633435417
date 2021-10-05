@@ -1,0 +1,6 @@
+2021-10-05 12:03:37,056 - [setup_logger.py:65-log_git_commit()] - INFO - cannot get git commit.
+2021-10-05 12:04:28,158 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-10-05 12:05:25,130 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-10-05 12:05:56,808 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-10-05 12:06:48,704 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-10-05 12:07:12,626 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.

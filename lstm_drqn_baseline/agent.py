@@ -270,15 +270,15 @@ class RLAgent(object):
     def get_game_step_info(self, ob, infos, prev_actions=None):
         # concat d/i/q/f together as one string
 
-        inventory_strings = [info["inventory"] for info in infos]
+        inventory_strings = [infos["inventory"]]
         inventory_token_list = [preproc(item, str_type='inventory', lower_case=True) for item in inventory_strings]
         inventory_id_list = [_words_to_ids(tokens, self.word2id) for tokens in inventory_token_list]
 
-        feedback_strings = [info["command_feedback"] for info in infos]
+        feedback_strings = [infos["feedback"]]
         feedback_token_list = [preproc(item, str_type='feedback', lower_case=True) for item in feedback_strings]
         feedback_id_list = [_words_to_ids(tokens, self.word2id) for tokens in feedback_token_list]
 
-        quest_strings = [info["objective"] for info in infos]
+        quest_strings = [infos["objective"]]
         quest_token_list = [preproc(item, str_type='None', lower_case=True) for item in quest_strings]
         quest_id_list = [_words_to_ids(tokens, self.word2id) for tokens in quest_token_list]
 
@@ -288,7 +288,7 @@ class RLAgent(object):
         else:
             prev_action_id_list = [[] for _ in infos]
 
-        description_strings = [info["description"] for info in infos]
+        description_strings = [infos["description"]]
         description_token_list = [preproc(item, str_type='description', lower_case=True) for item in description_strings]
         for i, d in enumerate(description_token_list):
             if len(d) == 0:
@@ -306,11 +306,12 @@ class RLAgent(object):
 
     def get_observation_strings(self, infos):
         # concat game_id_d/i/q together as one string
-        game_file_names = [info["game_file"] for info in infos]
-        inventory_strings = [info["inventory"] for info in infos]
-        description_strings = [info["description"] for info in infos]
+        # game_file_names = [info["game_file"] for info in infos]
+        inventory_strings = [infos["inventory"]]
+        description_strings = [infos["description"]]
 
-        observation_strings = [_n + _d + _i for (_n, _d, _i) in zip(game_file_names, description_strings, inventory_strings)]
+        #observation_strings = [_n + _d + _i for (_n, _d, _i) in zip(game_file_names, description_strings, inventory_strings)]
+        observation_strings = [_d + _i for (_d, _i) in zip(description_strings, inventory_strings)]
 
         return observation_strings
 
