@@ -1,0 +1,17 @@
+2021-10-09 12:05:18,906 - [setup_logger.py:65-log_git_commit()] - INFO - cannot get git commit.
+2021-10-09 12:08:04,406 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-10-09 12:11:00,610 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-10-09 12:13:59,187 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-10-09 12:16:58,162 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-10-09 12:19:56,516 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-10-09 14:07:40,951 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-10-09 14:09:40,564 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-10-09 14:12:37,919 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-10-09 14:15:30,821 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-10-09 14:18:01,445 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-10-09 14:18:01,447 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-10-09 14:19:46,730 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-10-09 14:22:14,594 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-10-09 14:25:07,614 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-10-09 14:27:49,240 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.
+2021-10-09 14:30:51,203 - [x2num.py:14-check_nan()] - WARNING - NaN or Inf found in input tensor.

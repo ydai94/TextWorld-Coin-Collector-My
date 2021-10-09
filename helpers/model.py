@@ -63,13 +63,15 @@ class LSTM_DQN(torch.nn.Module):
 
         self.action_scorer_shared = torch.nn.Linear(self.encoder_rnn_hidden_size[-1], self.action_scorer_hidden_dim)
         self.action_scorer_action = torch.nn.Linear(self.action_scorer_hidden_dim, self.n_actions, bias=False)
-        self.action_scorer_object = torch.nn.Linear(self.action_scorer_hidden_dim, self.n_objects, bias=False)
+        self.action_scorer_object1 = torch.nn.Linear(self.action_scorer_hidden_dim, self.n_objects, bias=False)
+        self.action_scorer_object2 = torch.nn.Linear(self.action_scorer_hidden_dim, self.n_objects, bias=False)
         self.fake_recurrent_mask = None
 
     def init_weights(self):
         torch.nn.init.xavier_uniform_(self.action_scorer_shared.weight.data, gain=1)
         torch.nn.init.xavier_uniform_(self.action_scorer_action.weight.data, gain=1)
-        torch.nn.init.xavier_uniform_(self.action_scorer_object.weight.data, gain=1)
+        torch.nn.init.xavier_uniform_(self.action_scorer_object1.weight.data, gain=1)
+        torch.nn.init.xavier_uniform_(self.action_scorer_object2.weight.data, gain=1)
         self.action_scorer_shared.bias.data.fill_(0)
 
     def representation_generator(self, _input_words):
@@ -88,12 +90,14 @@ class LSTM_DQN(torch.nn.Module):
 
         new_h, new_c = self.action_scorer_shared_recurrent.forward(state_representation, self.fake_recurrent_mask, last_hidden, last_cell)
         action_rank = self.action_scorer_action.forward(new_h)  # batch x n_action
-        object_rank = self.action_scorer_object.forward(new_h)  # batch x n_object
-        return action_rank, object_rank, new_h, new_c
+        object_rank1 = self.action_scorer_object1.forward(new_h)  # batch x n_object
+        object_rank2 = self.action_scorer_object2.forward(new_h)  # batch x n_object
+        return action_rank, object_rank1, object_rank2, new_h, new_c
 
     def action_scorer(self, state_representation):
         hidden = self.action_scorer_shared.forward(state_representation)  # batch x hid
         hidden = F.relu(hidden)  # batch x hid
         action_rank = self.action_scorer_action.forward(hidden)  # batch x n_action
-        object_rank = self.action_scorer_object.forward(hidden)  # batch x n_object
-        return action_rank, object_rank
+        object_rank1 = self.action_scorer_object1.forward(hidden)  # batch x n_object
+        object_rank2 = self.action_scorer_object2.forward(hidden)  # batch x n_object
+        return action_rank, object_rank, object_rank2

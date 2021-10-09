@@ -455,7 +455,8 @@ def train(config):
                                       parallel=True)
 '''
     info = EnvInfos(objective=True,description=True,inventory=True,feedback=True,intermediate_reward=True,admissible_commands=True)
-    env = JeriWorld('/content/tw_games/coin_collector.z8', infos=info, style = 'textworld')
+    #env = JeriWorld('/content/tw_games/coin_collector.z8', infos=info, style = 'textworld')
+    env = JeriWorld('/content/tw_games/cook.z8', infos=info, style = 'textworld')
     env.reset()
     # valid and test env
     run_test = config['general']['run_test']
@@ -503,8 +504,12 @@ def train(config):
 
     # collect all nouns
     # verb_list, object_name_list = get_verb_and_object_name_lists(env)
-    verb_list = ["go", "take"]
-    object_name_list = ["east", "west", "north", "south", "coin"]
+    #verb_list = ["go", "take"]
+    verb_list = ['chop', 'close', 'cook', 'dice', 'drink', 'drop', 'eat', 'go', 'insert', 'lock',
+          'open', 'prepare', 'put', 'slice', 'take', 'unlock']
+    #object_name_list = ["<s>", "east", "west", "north", "south", "coin"]
+    object_name_list = ['s', 'fridge', 'oven', 'table', 'counter', 'stove', 'chicken breast', 'chicken wing', 'yellow onion',
+            'carrot', 'yellow apple', 'cilantro', 'meal', 'cookbook', 'knife', 'north', 'south', 'east', 'west']
     verb_map = [word2id[w] for w in verb_list if w in word2id]
     noun_map = [word2id[w] for w in object_name_list if w in word2id]
     agent = RLAgent(config, word_vocab, verb_map, noun_map,
@@ -571,10 +576,11 @@ def train(config):
         curr_ras_hidden, curr_ras_cell = None, None  # ras: recurrent action scorer
         memory_cache = [[] for _ in range(batch_size)]
         solved = [0 for _ in range(batch_size)]
-
-        while not all(dones):
+        num_turn = 0
+        while not all(dones) and num_turn < 200:
+            num_turn += 1
             agent.model.train()
-            v_idx, n_idx, chosen_strings, curr_ras_hidden, curr_ras_cell = agent.generate_one_command(input_description, curr_ras_hidden, curr_ras_cell, epsilon=epsilon)
+            v_idx, n1_idx, n2_idx, chosen_strings, curr_ras_hidden, curr_ras_cell = agent.generate_one_command(input_description, curr_ras_hidden, curr_ras_cell, epsilon=epsilon)
             state = env.step(chosen_strings[0])
             obs, rewards, dones, infos = state[0].feedback, [state[1]], state[2], state[0]
             curr_observation_strings = agent.get_observation_strings(infos)
@@ -615,7 +621,7 @@ def train(config):
                 if rewards[b] > 0.0:
                     solved[b] = 1
                 # replay memory
-                memory_cache[b].append((curr_description_id_list[b], v_idx[b], n_idx[b], rewards_pt[b], mask_pt[b], dones[b], is_final, curr_observation_strings[b]))
+                memory_cache[b].append((curr_description_id_list[b], v_idx[b], n1_idx[b], n2_idx[b], rewards_pt[b], mask_pt[b], dones[b], is_final, curr_observation_strings[b]))
 
             if current_game_step > 0 and current_game_step % config["general"]["update_per_k_game_steps"] == 0:
                 policy_loss = agent.update(replay_batch_size, history_size, update_from, discount_gamma=discount_gamma)

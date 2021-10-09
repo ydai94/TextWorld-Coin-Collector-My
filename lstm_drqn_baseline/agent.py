@@ -15,7 +15,7 @@ import gym
 import gym_textworld  # Register all textworld environments.
 
 
-Transition = namedtuple('Transition', ('observation_id_list', 'v_idx', 'n_idx',
+Transition = namedtuple('Transition', ('observation_id_list', 'v_idx', 'n1_idx', 'n2_idx',
                                        'reward', 'mask', 'done', 'is_final', 'observation_str'))
 
 
@@ -202,55 +202,78 @@ class RLAgent(object):
         self.revisit_counting_rewards = []
         self.observation_cache.reset()
 
-    def get_chosen_strings(self, v_idx, n_idx):
+    def get_chosen_strings(self, v_idx, n1_idx, n2_idx):
         v_idx_np = to_np(v_idx)
-        n_idx_np = to_np(n_idx)
+        n1_idx_np = to_np(n1_idx)
+        n2_idx_np = to_np(n2_idx)
         res_str = []
-        for i in range(n_idx_np.shape[0]):
-            v, n = self.verb_map[v_idx_np[i]], self.noun_map[n_idx_np[i]]
-            res_str.append(self.word_vocab[v] + " " + self.word_vocab[n])
+        for i in range(n1_idx_np.shape[0]):
+            v, n1, n2 = self.verb_map[v_idx_np[i]], self.noun_map[n1_idx_np[i]], self.noun_map[n2_idx_np[i]]
+            c = self.word_vocab[v]
+            v_c = self.word_vocab[v]
+            if self.word_vocab[n1] == '<s>':
+                pass
+            else:
+                c += " " + self.word_vocab[n1]
+
+            if v_c == 'chop' or v_c == 'cook' or v_c == 'dice' or v_c == 'lock' or v_c == 'slice' or v_c == 'unlock':
+                c += ' with'
+            elif v_c == 'insert':
+                c += ' into'
+            elif v_c == 'put':
+                c += ' on'
+
+            if self.word_vocab[n2] == '<s>':
+                pass
+            else:
+                c += " " + self.word_vocab[n2]
+            res_str.append(c)
         return res_str
 
-    def choose_random_command(self, verb_rank, noun_rank):
+    def choose_random_command(self, verb_rank, noun1_rank, noun2_rank):
         batch_size = verb_rank.size(0)
-        vr, nr = to_np(verb_rank), to_np(noun_rank)
+        vr, nr1, nr2 = to_np(verb_rank), to_np(noun1_rank), to_np(noun2_rank)
 
-        v_idx, n_idx = [], []
+        v_idx, n1_idx, n2_idx = [], [], []
         for i in range(batch_size):
             v_idx.append(np.random.choice(len(vr[i]), 1)[0])
-            n_idx.append(np.random.choice(len(nr[i]), 1)[0])
-        v_qvalue, n_qvalue = [], []
+            n1_idx.append(np.random.choice(len(nr1[i]), 1)[0])
+            n2_idx.append(np.random.choice(len(nr2[i]), 1)[0])
+        v_qvalue, n1_qvalue, n2_qvalue = [], [], []
         for i in range(batch_size):
             v_qvalue.append(verb_rank[i][v_idx[i]])
-            n_qvalue.append(noun_rank[i][n_idx[i]])
-        v_qvalue, n_qvalue = torch.stack(v_qvalue), torch.stack(n_qvalue)
-        v_idx, n_idx = to_pt(np.array(v_idx), self.use_cuda), to_pt(np.array(n_idx), self.use_cuda)
-        return v_qvalue, v_idx, n_qvalue, n_idx
+            n1_qvalue.append(noun1_rank[i][n1_idx[i]])
+            n2_qvalue.append(noun2_rank[i][n2_idx[i]])
+        v_qvalue, n1_qvalue, n2_qvalue = torch.stack(v_qvalue), torch.stack(n1_qvalue), torch.stack(n2_qvalue)
+        v_idx, n1_idx, n2_idx = to_pt(np.array(v_idx), self.use_cuda), to_pt(np.array(n1_idx), self.use_cuda), to_pt(np.array(n2_idx), self.use_cuda)
+        return v_qvalue, v_idx, n1_qvalue, n2_qvalue, n1_idx, n2_idx
 
-    def choose_maxQ_command(self, verb_rank, noun_rank):
+    def choose_maxQ_command(self, verb_rank, noun1_rank, noun2_rank):
         batch_size = verb_rank.size(0)
-        vr, nr = to_np(verb_rank), to_np(noun_rank)
+        vr, nr1, nr2 = to_np(verb_rank), to_np(noun1_rank), to_np(noun2_rank)
         v_idx = np.argmax(vr, -1)
-        n_idx = np.argmax(nr, -1)
-        v_qvalue, n_qvalue = [], []
+        n1_idx = np.argmax(nr1, -1)
+        n2_idx = np.argmax(nr2, -1)
+        v_qvalue, n1_qvalue, n2_qvalue = [], [], []
         for i in range(batch_size):
             v_qvalue.append(verb_rank[i][v_idx[i]])
-            n_qvalue.append(noun_rank[i][n_idx[i]])
-        v_qvalue, n_qvalue = torch.stack(v_qvalue), torch.stack(n_qvalue)
-        v_idx, n_idx = to_pt(v_idx, self.use_cuda), to_pt(n_idx, self.use_cuda)
-        return v_qvalue, v_idx, n_qvalue, n_idx
+            n1_qvalue.append(noun1_rank[i][n1_idx[i]])
+            n2_qvalue.append(noun2_rank[i][n2_idx[i]])
+        v_qvalue, n1_qvalue, n2_qvalue = torch.stack(v_qvalue), torch.stack(n1_qvalue), torch.stack(n2_qvalue)
+        v_idx, n1_idx, n2_idx = to_pt(np.array(v_idx), self.use_cuda), to_pt(np.array(n1_idx), self.use_cuda), to_pt(np.array(n2_idx), self.use_cuda)
+        return v_qvalue, v_idx, n1_qvalue, n2_qvalue, n1_idx, n2_idx
 
     def get_ranks(self, input_description, prev_hidden=None, prev_cell=None):
         state_representation = self.model.representation_generator(input_description)
-        verb_rank, noun_rank, curr_hidden, curr_cell = self.model.recurrent_action_scorer(state_representation, prev_hidden, prev_cell)
-        return verb_rank, noun_rank, curr_hidden, curr_cell
+        verb_rank, noun1_rank, noun2_rank, curr_hidden, curr_cell = self.model.recurrent_action_scorer(state_representation, prev_hidden, prev_cell)
+        return verb_rank, noun1_rank, noun2_rank, curr_hidden, curr_cell
 
     def generate_one_command(self, input_description, prev_hidden=None, prev_cell=None, epsilon=0.2):
-        verb_rank, noun_rank, curr_hidden, curr_cell = self.get_ranks(input_description, prev_hidden, prev_cell)  # batch x n_verb, batch x n_noun
+        verb_rank, noun1_rank, noun2_rank, curr_hidden, curr_cell = self.get_ranks(input_description, prev_hidden, prev_cell)  # batch x n_verb, batch x n_noun
         curr_hidden = curr_hidden.detach()
         curr_cell = curr_cell.detach()
-        v_qvalue_maxq, v_idx_maxq, n_qvalue_maxq, n_idx_maxq = self.choose_maxQ_command(verb_rank, noun_rank)
-        v_qvalue_random, v_idx_random, n_qvalue_random, n_idx_random = self.choose_random_command(verb_rank, noun_rank)
+        v_qvalue_maxq, v_idx_maxq, n1_qvalue_maxq, n2_qvalue_maxq, n1_idx_maxq, n2_idx_maxq = self.choose_maxQ_command(verb_rank, noun1_rank, noun2_rank)
+        v_qvalue_random, v_idx_random, n1_qvalue_random, n2_qvalue_random, n1_idx_random, n2_idx_random = self.choose_random_command(verb_rank, noun1_rank, noun2_rank)
 
         # random number for epsilon greedy
         rand_num = np.random.uniform(low=0.0, high=1.0, size=(input_description.size(0),))
@@ -260,12 +283,13 @@ class RLAgent(object):
         greater_than_epsilon = to_pt(greater_than_epsilon, self.use_cuda, type='float')
         less_than_epsilon, greater_than_epsilon = less_than_epsilon.long(), greater_than_epsilon.long()
         v_idx = less_than_epsilon * v_idx_random + greater_than_epsilon * v_idx_maxq
-        n_idx = less_than_epsilon * n_idx_random + greater_than_epsilon * n_idx_maxq
-        v_idx, n_idx = v_idx.detach(), n_idx.detach()
+        n1_idx = less_than_epsilon * n1_idx_random + greater_than_epsilon * n1_idx_maxq
+        n2_idx = less_than_epsilon * n2_idx_random + greater_than_epsilon * n2_idx_maxq
+        v_idx, n1_idx, n2_idx = v_idx.detach(), n1_idx.detach(), n2_idx.detach()
 
-        chosen_strings = self.get_chosen_strings(v_idx, n_idx)
+        chosen_strings = self.get_chosen_strings(v_idx, n1_idx, n2_idx)
 
-        return v_idx, n_idx, chosen_strings, curr_hidden, curr_cell
+        return v_idx, n1_idx, n2_idx, chosen_strings, curr_hidden, curr_cell
 
     def get_game_step_info(self, ob, infos, prev_actions=None):
         # concat d/i/q/f together as one string
@@ -355,10 +379,11 @@ class RLAgent(object):
         observation_id_list = pad_sequences(sequences[0].observation_id_list, maxlen=max_len(sequences[0].observation_id_list), padding='post').astype('int32')
         input_observation = to_pt(observation_id_list, self.use_cuda)
         v_idx = torch.stack(sequences[0].v_idx, 0)  # batch x 1
-        n_idx = torch.stack(sequences[0].n_idx, 0)  # batch x 1
-        verb_rank, noun_rank, curr_ras_hidden, curr_ras_cell = self.get_ranks(input_observation, prev_ras_hidden, prev_ras_cell)
-        v_qvalue, n_qvalue = verb_rank.gather(1, v_idx.unsqueeze(-1)).squeeze(-1), noun_rank.gather(1, n_idx.unsqueeze(-1)).squeeze(-1)  # batch
-        prev_qvalue = torch.mean(torch.stack([v_qvalue, n_qvalue], -1), -1)  # batch
+        n1_idx = torch.stack(sequences[0].n1_idx, 0)  # batch x 1
+        n2_idx = torch.stack(sequences[0].n2_idx, 0)  # batch x 1
+        verb_rank, noun1_rank, noun2_rank, curr_ras_hidden, curr_ras_cell = self.get_ranks(input_observation, prev_ras_hidden, prev_ras_cell)
+        v_qvalue, n1_qvalue, n2_qvalue = verb_rank.gather(1, v_idx.unsqueeze(-1)).squeeze(-1), noun1_rank.gather(1, n1_idx.unsqueeze(-1)).squeeze(-1), noun2_rank.gather(1, n2_idx.unsqueeze(-1)).squeeze(-1)  # batch
+        prev_qvalue = torch.mean(torch.stack([v_qvalue, n1_qvalue, n2_qvalue], -1), -1)  # batch
         if update_from > 0:
             prev_qvalue, curr_ras_hidden, curr_ras_cell = prev_qvalue.detach(), curr_ras_hidden.detach(), curr_ras_cell.detach()
 
@@ -366,16 +391,18 @@ class RLAgent(object):
             observation_id_list = pad_sequences(sequences[i].observation_id_list, maxlen=max_len(sequences[i].observation_id_list), padding='post').astype('int32')
             input_observation = to_pt(observation_id_list, self.use_cuda)
             v_idx = torch.stack(sequences[i].v_idx, 0)  # batch x 1
-            n_idx = torch.stack(sequences[i].n_idx, 0)  # batch x 1
+            n1_idx = torch.stack(sequences[i].n1_idx, 0)  # batch x 1
+            n2_idx = torch.stack(sequences[i].n2_idx, 0)  # batch x 1
 
-            verb_rank, noun_rank, curr_ras_hidden, curr_ras_cell = self.get_ranks(input_observation, curr_ras_hidden, curr_ras_cell)
+
+            verb_rank, noun1_rank, noun2_rank, curr_ras_hidden, curr_ras_cell = self.get_ranks(input_observation, curr_ras_hidden, curr_ras_cell)
             # max
-            v_qvalue_max, _, n_qvalue_max, _ = self.choose_maxQ_command(verb_rank, noun_rank)
-            q_value_max = torch.mean(torch.stack([v_qvalue_max, n_qvalue_max], -1), -1)  # batch
+            v_qvalue_max, _, n1_qvalue_max, n2_qvalue_max, _, _ = self.choose_maxQ_command(verb_rank, noun1_rank, noun2_rank)
+            q_value_max = torch.mean(torch.stack([v_qvalue_max, n1_qvalue_max, n2_qvalue_max], -1), -1)  # batch
             q_value_max = q_value_max.detach()
             # from memory
-            v_qvalue, n_qvalue = verb_rank.gather(1, v_idx.unsqueeze(-1)).squeeze(-1), noun_rank.gather(1, n_idx.unsqueeze(-1)).squeeze(-1)  # batch
-            q_value = torch.mean(torch.stack([v_qvalue, n_qvalue], -1), -1)  # batch
+            v_qvalue, n1_qvalue, n2_qvalue = verb_rank.gather(1, v_idx.unsqueeze(-1)).squeeze(-1), noun1_rank.gather(1, n1_idx.unsqueeze(-1)).squeeze(-1), noun2_rank.gather(1, n2_idx.unsqueeze(-1)).squeeze(-1)  # batch
+            q_value = torch.mean(torch.stack([v_qvalue, n1_qvalue, n2_qvalue], -1), -1)  # batch
             if i < update_from or i == len(sequences) - 1:
                 q_value, curr_ras_hidden, curr_ras_cell = q_value.detach(), curr_ras_hidden.detach(), curr_ras_cell.detach()
             if i > update_from:
