@@ -455,8 +455,8 @@ def train(config):
                                       parallel=True)
 '''
     info = EnvInfos(objective=True,description=True,inventory=True,feedback=True,intermediate_reward=True,admissible_commands=True)
-    #env = JeriWorld('/content/tw_games/coin_collector.z8', infos=info, style = 'textworld')
-    env = JeriWorld('/content/tw_games/cook.z8', infos=info, style = 'textworld')
+    env = JeriWorld('/content/tw_games/coin_collector.z8', infos=info, style = 'textworld')
+    #env = JeriWorld('/content/tw_games/cook.z8', infos=info, style = 'textworld')
     env.reset()
     # valid and test env
     run_test = config['general']['run_test']
@@ -504,12 +504,12 @@ def train(config):
 
     # collect all nouns
     # verb_list, object_name_list = get_verb_and_object_name_lists(env)
-    #verb_list = ["go", "take"]
-    verb_list = ['chop', 'close', 'cook', 'dice', 'drink', 'drop', 'eat', 'go', 'insert', 'lock',
-          'open', 'prepare', 'put', 'slice', 'take', 'unlock']
-    #object_name_list = ["<s>", "east", "west", "north", "south", "coin"]
-    object_name_list = ['s', 'fridge', 'oven', 'table', 'counter', 'stove', 'chicken breast', 'chicken wing', 'yellow onion',
-            'carrot', 'yellow apple', 'cilantro', 'meal', 'cookbook', 'knife', 'north', 'south', 'east', 'west']
+    verb_list = ["go", "take"]
+    '''verb_list = ['chop', 'close', 'cook', 'dice', 'drink', 'drop', 'eat', 'go', 'insert', 'lock',
+          'open', 'prepare', 'put', 'slice', 'take', 'unlock']'''
+    object_name_list = ["<s>", "east", "west", "north", "south", "coin"]
+    '''object_name_list = ['s', 'fridge', 'oven', 'table', 'counter', 'stove', 'chicken breast', 'chicken wing', 'yellow onion',
+            'carrot', 'yellow apple', 'cilantro', 'meal', 'cookbook', 'knife', 'north', 'south', 'east', 'west']'''
     verb_map = [word2id[w] for w in verb_list if w in word2id]
     noun_map = [word2id[w] for w in object_name_list if w in word2id]
     agent = RLAgent(config, word_vocab, verb_map, noun_map,
